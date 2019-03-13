@@ -1,25 +1,25 @@
-#-------------------------------------------------------------------------------------------------------------------------#
-# The input file “RECFISH-WP1_Mediterranean.xlsx” (sheet “Landings”)  is necessarily structured as described in the WP1,
-# thus it should contain in row 1:1 the labels 
-# as in the following script, each one for a column thus columns from ”file.name” to “Comments” (21 columns) are expected by the code
+#--------------------------------------------------------------------------------------------------------------------------------------#
+# The input file “RECFISH-WP1_Mediterranean.xlsx” (sheet “Landings”)  is necessarily structured as described in the WP1,               #
+# thus it should contain in row 1:1 the labels                                                                                         #
+# as in the following script, each one for a column thus columns from ”file.name” to “Comments” (21 columns) are expected by the code  #
+                                                                                                                                       # 
+# --------------------------------- Columns names of RECFISH Landings file ------------------------------------------------------------#
+# The columns names of csv input file of sheet Landings is necessarily structured in this way:                                         #
+# [1] "file name"                 "dataset ID"                "record ID"                 "Country"                                    #
+# [5] "Year"                      "Time Unit"                 "Time Unit Value"           "GSA"                                        #
+# [9] "Geographical Unit"         "Geographical Unit Name"    "Port Name"                 "Gear L3"                                    #
+# [13] "Gear L4"                   "Gear L5"                   "Fishing Technique"         "Vessel Length Category"                    #
+# [17] "Species (scientific name)" "Species FAO-ASFIS code"    "Total Landings (in tons)"  "Total Discards (in tons)"                  #
+# [21] "Comments"                                                                                                                      #
+# -------------------------------------------------- STEP -----------------------------------------------------------------------------# 
+# The first analysis include three steps:                                                                                              #
+# 1. Avoiding duplication of data                                                                                                      #
+# 2. Checking for the validity of data entered                                                                                         #
+# 3. Check of correctness of species name                                                                                              #
+                                                                                                                                       #
+#------------------------------------------------- INPUT FILE -------------------------------------------------------------------------#
 
-# --------------------------------- Columns names of RECFISH Landings file -----------------------------------------------#
-# The columns names of csv input file of sheet Landings is necessarily structured in this way: 
-# [1] "file name"                 "dataset ID"                "record ID"                 "Country"                  
-# [5] "Year"                      "Time Unit"                 "Time Unit Value"           "GSA"                      
-# [9] "Geographical Unit"         "Geographical Unit Name"    "Port Name"                 "Gear L3"                  
-# [13] "Gear L4"                   "Gear L5"                   "Fishing Technique"         "Vessel Length Category"   
-# [17] "Species (scientific name)" "Species FAO-ASFIS code"    "Total Landings (in tons)"  "Total Discards (in tons)" 
-# [21] "Comments"
-
-# ------------------------------------------- STEP -----------------------------------------------------------------------# 
-# The first analysis include three steps: 
-# 1. Avoiding duplication of data 
-# 2. Checking for the validity of data entered
-# 3. Check of correctness of species name   
-
-#------------------------------------------------- INPUT FILE ------------------------------------------------------------#
-#--- select your file: Mediterranean or Black sea ----
+#--- select your file: Mediterranean or Black sea ---#
 file.csv <- "RECFISH-WP1_Mediterranean.csv" # file database MEDITERRANEAN 
 file.csv <- "RECFISH-WP1_BlackSea.csv" # file database BLACK SEA 
 
