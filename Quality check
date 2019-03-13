@@ -28,6 +28,28 @@ alphaCode <-  data.frame(read.csv("ASFIS_WORMS.csv",header=T,sep=",",na.strings 
 CountryCode <- read.csv("CountryCode.csv",header=T, sep=",") # Country code  
 # --- https://www.cia.gov/library/publications/the-world-factbook/appendix/appendix-d.html ---
 
+#--- Packages ---#
+library(xlsx)
+library(taxize)
+library(plyr)
+library(dplyr)
+library(spocc)
+library(data.table)
+library(rgbif)
+library(stringi)
+library(stringr)
+library(ggplot2)
+library(gridExtra)
+library(ggrepel)
+library(grid)
+library(ggpubr)
+library(ggpmisc)
+library(car)
+library(vegan)
+library(rlist)
+library(emulator)
+library(ggpubr)
+library(mosaic)
 #_________________________________________________________________________________________________________________________#
 #----------------------------------- START QUALITY CHECK FUNCTION --------------------------------------------------------#
 #_________________________________________________________________________________________________________________________#
