@@ -1,0 +1,55 @@
+#-------------------------------------- Validation data-set ------------------------------------------------------------#
+# The validation of data set include two steps:                                                                         #
+#         1. Validation INTRA data set                                                                                  #
+#         2. Validation INTER data set                                                                                  #
+#-----------------------------------------------------------------------------------------------------------------------#
+
+#_______________________________________________________________________________________________________________________#
+#------------------------------------------ START VALIDATION FUNCTION --------------------------------------------------#
+#_______________________________________________________________________________________________________________________#
+
+fun.val <- function (f) {
+  file.res <- f    
+  file.res[file.res==""] <- NA # fill al empty cell with NA
+  
+ # ------- new geographical unit name ------'
+  file.res$GUNnew <- ifelse(is.na(file.res$Port.Name)==F,"Fishing area",as.character(file.res$Geographical.Unit))
+ 
+ # ----- spatial aggregation code -----'
+  col_name_flag <- c("Country","Year","Time.Unit","CorrectNameFinal","GSA","GUNnew")
+  file.res$paste_flag <- apply(file.res[,col_name_flag],1,paste0,collapse="_")
+ 
+ # ----- function to aggregate (with sum) the data ---------------------------------------------------------------------#
+ # The internal validation regards the evaluation of the difference between time series reconstructed                   #
+ # for each GSA on the basis of data characterized by a different Geographical.Unit,resulting on 3 comparison:          #
+ #                      1. GSA vs unit region                                                                           #
+ #                      2. GSA vs fishing area                                                                          #
+ #                      3. Fishing area vs unit region                                                                  #
+ #----------------------------------------------------------------------------------------------------------------------#
+ 
+ fun.aggreg <- function(a,column){
+    aggLandings <- aggregate(Total.Landings..in.tons.~
+                               Country+Year+Time.Unit+CorrectNameFinal+ GSA+GUNnew,
+                             subset(a, GUNnew==column ),
+                             FUN=sum) # aggregate di default non usa gli NA
+    aggLandings$aggTime <- 'Year' # insert time unit Year (which is the new time unit after aggregation), for the aggregation file 
+    
+    '-----  code for match -----'
+    col_name_paste <- c("Country","Year","aggTime","CorrectNameFinal" ,"GSA")
+    aggLandings$paste <- apply(aggLandings[,col_name_paste],1,paste0,collapse="_") # paste unic code with agg time (Year) c("Country","Year","aggTime","CorrectNameFinal" "GSA")
+    
+    '----- spatial aggregation code -----'
+    col_name_flag <- c("Country","Year","Time.Unit","CorrectNameFinal","GSA","GUNnew")
+    aggLandings$paste_flag <- apply(aggLandings[,col_name_flag],1,paste0,collapse="_") # paste unic code
+    
+    '---- code for statistical Spearman test----'
+    col_name_Noyear <- c("Country","aggTime","CorrectNameFinal","GSA" )
+    aggLandings$pasteNO.year <- apply(aggLandings[,col_name_Noyear],1,paste0,collapse="_")
+    
+    return(aggLandings)
+  } # function to aggregate the data for principal factor
+  
+  
+
+
+
