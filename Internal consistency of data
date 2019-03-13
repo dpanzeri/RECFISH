@@ -1,0 +1,74 @@
+#-------------------------------------------- INTERNAL CONSISTENCY OF DATA -----------------------------------------------------#
+
+# The internal consistency of data check aim sat evaluating the presence of extreme values or outliers within each time series. 
+# The landings time series can include:
+# 1.  missing data (discontinuity)
+# 2. 'strange’ values that can be identified as outliers on the basis of statistical analysis
+
+# The purpose of the internal consistency of data is to report all values that are outliers,
+# as a guidance to decide whether to consider or not them for the stock assessment procedure.
+# Thus the value of z-score = 3 was used as a limit for correct data definition and z-scores > 3 allowed identifying outliers: 
+# records were added of a column that allows to ‘flag’ the outliers values (>=3 or <=-3) or not (other cases).
+
+#---------------------------------------------- START STATISTICAL FUNCTION -----------------------------------------------------#
+
+fun.stat <- function  (x) {
+
+#--- change of the wrong name in column  'time unit'  ---#
+
+  x$Time.Unit <- ifelse((as.character(x$Time.Unit) == "Month")==T,"Month",
+                               ifelse((as.character(x$Time.Unit) =="MONTH")==T,"Month",
+                                      ifelse((as.character(x$Time.Unit) == "Year")==T,"Year",
+                                             ifelse((as.character(x$Time.Unit) == "YEAR")==T,"Year",as.character(x$Time.Unit)))))        
+  
+#--- concatenation of column name to create a time series ---#
+col_group <- c("Country","Time.Unit","GSA","Geographical.Unit","Geographical.Unit.Name","Port.Name","Gear.L3","CorrectNameFinal")      
+groups <- apply(x[col_group], 1, paste0, collapse = ", ") # all combination row * row 
+x$group <- as.character(groups) # insert a column with group
+
+#--- function to apply z score for time seires < 15 data or z score on the residual difference from 5° polynomial fit to time series > 15 data
+Myfun <- function(c) {
+    if (length(c) <= 15) {
+      result <- zscore(c)
+      
+    } else if (length(c) > 15){
+      fit <- lm(c ~ poly(
+        x = 1:length(c),
+        degree = 5,
+        raw = TRUE))
+      result <- ((resid(fit) - mean(resid(fit))) / sd(resid(fit)))
+    }
+    return(result)
+  }
+  x$TimeSeriesID <- ave(x$Total.Landings..in.tons., x$group, FUN = seq_along) # The progressive number within the identified time series (from 1 to the maximum length of the time series)
+  x$TimeSeriesLength <- ave(x$Total.Landings..in.tons.,x$group,FUN =length) # The total length of the time series to which the record belongs
+  col_univocal <- c("group","TimeSeriesID") # columns for Univocal code
+  x$UnivocalCode <- paste(x[,col_univocal[1]],x[,col_univocal[2]],sep=".") # Univocal code for each record within the time series (concatenating “TimeSeries” and “TimeSeriesID”)
+  
+  lst.new <- tapply(x$Total.Landings..in.tons.,factor(x$group, levels = unique(x$group)),Myfun) # apply function (Myfun) to all element
+  df.lst.new <- data.frame(cbind(unlist(lst.new),names(unlist(lst.new)))) # unlist previous list and name group
+  colnames(df.lst.new) <- c("resid","group")
+  x$z.score <- df.lst.new$resid[match(x$UnivocalCode,df.lst.new$group)]
+  x$z.score <- as.numeric(levels(x$z.score))[x$z.score]
+  x$outlier <- ifelse(x$z.score<=-3|x$z.score>=3,"outlier","not outlier") # add outlier string character in file.res
+  
+  return(x)
+}
+ 
+file.res2 <- fun.stat(file.res) # apply a statistical function to the previous result file.res from first analysis 'Quality check'    
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
