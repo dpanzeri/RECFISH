@@ -1,0 +1,149 @@
+#-------------------------------------------------------------------------------------------------------------------------#
+# The input file “RECFISH-WP1_Mediterranean.xlsx” (sheet “Landings”)  is necessarily structured as described in the WP1,
+# thus it should contain in row 1:1 the labels 
+# as in the following script, each one for a column thus columns from ”file.name” to “Comments” (21 columns) are expected by the code
+
+# --------------------------------- Columns names of RECFISH Landings file -----------------------------------------------#
+# The columns names of csv input file of sheet Landings is necessarily structured in this way: 
+# [1] "file name"                 "dataset ID"                "record ID"                 "Country"                  
+# [5] "Year"                      "Time Unit"                 "Time Unit Value"           "GSA"                      
+# [9] "Geographical Unit"         "Geographical Unit Name"    "Port Name"                 "Gear L3"                  
+# [13] "Gear L4"                   "Gear L5"                   "Fishing Technique"         "Vessel Length Category"   
+# [17] "Species (scientific name)" "Species FAO-ASFIS code"    "Total Landings (in tons)"  "Total Discards (in tons)" 
+# [21] "Comments"
+
+# ------------------------------------------- STEP -----------------------------------------------------------------------# 
+# The first analysis include three steps: 
+# 1. Avoiding duplication of data 
+# 2. Checking for the validity of data entered
+# 3. Check of correctness of species name   
+
+#------------------------------------------------- INPUT FILE ------------------------------------------------------------#
+#--- select your file: Mediterranean or Black sea ----
+file.csv <- "RECFISH-WP1_Mediterranean.csv" # file database MEDITERRANEAN 
+file.csv <- "RECFISH-WP1_BlackSea.csv" # file database BLACK SEA 
+
+fishStat <- data.frame(read.csv("fishStat.csv",header=T,sep=",",dec=".",na.string= "...")) # FAO fishstat Data Base
+alphaCode <-  data.frame(read.csv("ASFIS_WORMS.csv",header=T,sep=",",na.strings = "")) # Three alpha code 
+CountryCode <- read.csv("CountryCode.csv",header=T, sep=",") # Country code  
+# --- https://www.cia.gov/library/publications/the-world-factbook/appendix/appendix-d.html ---
+
+#_________________________________________________________________________________________________________________________#
+#----------------------------------- START QUALITY CHECK FUNCTION --------------------------------------------------------#
+#_________________________________________________________________________________________________________________________#
+
+fun.check <- function (file.csv) {
+  
+  #--- input of file ---
+  file.1 <- data.frame(read.csv(file.csv, header=TRUE,sep= ",",na.strings = c("-1","-")))
+  file.1$ID <- seq(1:nrow(file.1))
+  
+#=========================== 1.STEP: AVOIDING DUPLICATION OF DATA ========================================================#
+  
+  file.1 <- data.frame(setDT(file.1)[, `:=` (dup = seq_len(.N) > 1, ref = paste0("ID= ", first(ID))), 
+                                     by = .(dataset.ID,Country, Year, Time.Unit, Time.Unit.Value, GSA,
+                                            Geographical.Unit,Geographical.Unit.Name,Port.Name,
+                                            Gear.L3,Gear.L4,Gear.L5,Fishing.Technique,Vessel.Length.Category,
+                                            Species..scientific.name.,Species.FAO.ASFIS.code,Total.Landings..in.tons.,
+                                            Total.Discards..in.tons.)][dup == FALSE, ref := NA])
+                                           
+#============================= 2. STEP  CHECKING FOR THE VALIDITY OF DATA ENTERED ========================================#
+
+  file.1$Total.Landings..in.tons. <- as.numeric(levels(file.1$Total.Landings..in.tons.))[file.1$Total.Landings..in.tons.]
+  file.1$Total.Landings..in.tons. <- ifelse(file.1$Total.Landings..in.tons. < 0,NA,file.1$Total.Landings..in.tons.)
+  
+ #==================== 3. STEP: CHECK OF CORRECTNESS OF SPECIES NAME =====================================================#
+  #--- remove spp, spp., sp. & sp from species names for ITIS check ---#
+  speciesName <- as.character(unique(file.1$Species..scientific.name.))
+  speciesName.NOspp <- gsub('spp|spp.|sp.|sp','',speciesName) # remove spp character
+  speciesName.NOspp <- gsub(" $","",speciesName.NOspp, perl=T) # remove space after character string and inverted commas
+  
+  #--- species' check with ITIS data base ---#
+  out <- list()
+  for(i in 1:length(speciesName.NOspp)){
+  out[[i]] <- tax_name(speciesName.NOspp[i], get = c("species","genus","family","order"))
+  }
+  
+  out2 <- plyr::ldply(out, data.frame) # from list to data frame 
+  
+  #--- create a column with correct names fill ---
+  out2$new1 <- ifelse(is.na(out2$species)==T,out2$genus,out2$species)
+  out2$new2 <- ifelse(is.na(out2$new1)==T,out2$family,out2$new1)
+  out2$new3 <- ifelse(is.na(out2$new2)==T,out2$order,out2$new2)
+  
+  #--- remove spp, spp.,sp. & sp  from input file for GBIF check ---#
+  NOspp <- as.character(gsub('spp|spp.|sp.|sp','',file.1$Species..scientific.name.))
+  NOspp <- gsub(" $","",NOspp, perl=T) #http://www.endmemo.com/program/R/gsub.php
+  
+  #--- create a column with correct name ---#
+  CorrectName <- out2$new3[match(NOspp,out2$query)]
+  #--- 2° check ---# 
+  Nomatch.species <- unique(subset(NOspp, is.na(CorrectName)))
+  second.check.id. <- data.frame(as.gbifid(get_gbifid(Nomatch.species[1:length(Nomatch.species)])))[,1]
+  second.check.id <- as.numeric(second.check.id.)
+  find.species.2 <- (occ_search(taxonKey=na.omit(second.check.id),
+                              limit=1, return='hier',
+                              curlopts=list(verbose=F)))
+  #--- select only element list where are species name and rank ---#
+  l <- find.species.2[c(1:length(unique(na.omit(second.check.id))))]
+  l <- lapply(l, "[[", 1) # unlist the first list
+  res <-do.call(rbind, l)[,1:2]
+  
+  #--- attach final name column ---#      
+  CorrectName.gbif <- res$name[match(speciesName.NOspp,res$name)]
+  file.1$CorrectNameFinal <- ifelse(is.na(CorrectName)==T,CorrectName.gbif,CorrectName)
+  #--- create a file for wrong name ---#
+  mistake.name <- data.frame(unique(file.1[which(is.na(file.1$CorrectNameFinal)),]$Species..scientific.name.))
+  colnames(mistake.name) <- "mistake.name"
+  
+  #=========================== OUTPUT ======================="
+  #--- save data in a carpet ---#
+  write.csv(mistake.name,"mistake.name.csv")
+  
+  return(file.1)
+} 
+
+ file.res <- fun.check(file.csv)         
+
+
+  
+  
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
