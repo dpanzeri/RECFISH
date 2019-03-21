@@ -17,7 +17,6 @@
 #   but for validation function we need a devoted function for each file (Mediterranean or Black Sea)                                                                                                                         
 #-----------------------------------------------------------------------------------------------------------------------#
 
-file.csv <- "RECFISH-WP1_BlackSea_DP_11032019.csv"
 
 fun.val.BS <- function (f) {
   file.res <- f   
