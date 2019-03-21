@@ -1,3 +1,15 @@
+#-------------------------------------- Validation data-set ------------------------------------------------------------#
+# The validation of data set include two steps:                                                                         #
+#         1. Validation INTRA data set                                                                                  #
+#         2. Validation INTER data set                                                                                  #
+#-----------------------------------------------------------------------------------------------------------------------#
+
+#_______________________________________________________________________________________________________________________#
+#----------------------------------- START VALIDATION FUNCTION for BLACK SEA DATA SET ----------------------------------#
+#_______________________________________________________________________________________________________________________#
+
+
+
 fun.val.BS <- function (f) {
   file.res <- f   
   file.res[file.res==""] <- NA # fill al empty cell with NA
@@ -142,5 +154,6 @@ fun.val.BS <- function (f) {
 }
 
 file.res3_BS <- fun.val.BS(file.res2)
+# save data in ypur carpet as BS (Black Sea) file
 write.csv(file.res3_BS,"file.res3_BS.csv")
 
