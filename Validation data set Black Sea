@@ -1,0 +1,146 @@
+fun.val.BS <- function (f) {
+  file.res <- f   
+  file.res[file.res==""] <- NA # fill al empty cell with NA
+  
+  #'------- new geographical unit name ------'
+  file.res$GUNnew <- ifelse(is.na(file.res$Port.Name)==F,"Fishing area",as.character(file.res$Geographical.Unit))
+  #'----- spatial aggregation code -----'
+  col_name_flag <- c("Country","Year","Time.Unit","CorrectNameFinal","GSA","GUNnew")
+  file.res$paste_flag <- apply(file.res[,col_name_flag],1,paste0,collapse="_")
+  
+  #--- aggregate for GSA and empty Port Name ---#
+  
+  fun.aggreg <- function(a,column){
+    aggLandings <- aggregate(Total.Landings..in.tons.~
+                               Country+Year+Time.Unit+CorrectNameFinal+ GSA+GUNnew,
+                             subset(a, GUNnew==column ),
+                             FUN=sum) # aggregate di default non usa gli NA
+    aggLandings$aggTime <- 'Year' # insert time unit Year, for the aggregation file 
+    
+    '-----  code for match -----'
+    col_name_paste <- c("Country","Year","aggTime","CorrectNameFinal" ,"GSA")
+    aggLandings$paste <- apply(aggLandings[,col_name_paste],1,paste0,collapse="_") # paste unic code with agg time (Year) c("Country","Year","aggTime","CorrectNameFinal" "GSA")
+    
+    '----- spatial aggregation code -----'
+    col_name_flag <- c("Country","Year","Time.Unit","CorrectNameFinal","GSA","GUNnew")
+    aggLandings$paste_flag <- apply(aggLandings[,col_name_flag],1,paste0,collapse="_") # paste unic code
+    
+    '---- code for statistical Spearman test----'
+    col_name_Noyear <- c("Country","aggTime","CorrectNameFinal","GSA" )
+    aggLandings$pasteNO.year <- apply(aggLandings[,col_name_Noyear],1,paste0,collapse="_")
+    return(aggLandings)
+  } # function to aggregate the data for principal factor
+  
+  aggLandings.GSA <- fun.aggreg(file.res,"GSA") # aggregate for GSA
+  aggLandings.Area <- fun.aggreg(file.res,"Fishing area")  # aggregate for Fishing area
+  
+  
+  #--- Select the longest data frame ---#
+  nrow(aggLandings.Area)
+  nrow(aggLandings.GSA)
+  
+  max(c(nrow(aggLandings.Area),nrow(aggLandings.Region),nrow(aggLandings.GSA)))
+  
+  #'--------------------------------------------- MATCH in AREA FILE ---------------------------------------------------------'
+  #--- match Area landings and GSA landings ---#
+
+  aggLandings.GSA$matchArea <- aggLandings.Area$Total.Landings..in.tons.[match(aggLandings.GSA$paste,aggLandings.Area$paste)]
+  
+  #'--------------------------------------------------------------------------------------------------------------------------'
+  
+  
+  #'=============================== VALIDATION INTER-DATA SET =========================================================='
+  #_____________________________ INPUT FAO SPECIES AND DATA from FISHSTATJ ____________________________________________
+  
+  
+  #--- match common name Fistat and WORMS and out scientific name ---#
+  fishStat$sciName <-  alphaCode$Scientific_name_UPDATED_WORMS[match(fishStat$Species..ASFIS.species.,alphaCode$ENGLISH_NAME)]
+  #-- melt years ---#
+  melt.fishStat <- data.frame(melt(fishStat[,c(-2,-4)],id=c("Country..Country.","Fishing.area..FAO.division.","sciName")))
+  #--- adjust column year ---#
+  melt.fishStat$variable <- as.numeric(gsub('X','',melt.fishStat$variable))
+  #--- FAO area in file.res ---#
+  file.res$FAOarea <- ifelse(file.res$GSA=="GSA 1"|file.res$GSA=="GSA 2"|file.res$GSA=="GSA 3"|file.res$GSA=="GSA 4"|file.res$GSA=="GSA 5"|file.res$GSA=="GSA 6"|file.res$GSA=="GSA 11.1","Balearic",
+                             ifelse(file.res$GSA == "GSA 7", "Gulf of Lion",
+                                    ifelse(file.res$GSA == "GSA 8"|file.res$GSA=="GSA 9"|file.res$GSA=="GSA 10"|file.res$GSA=="GSA 11.2"|file.res$GSA=="GSA 12","Sardinia",
+                                           ifelse(file.res$GSA =="GSA 13"|file.res$GSA=="GSA 14"|file.res$GSA=="GSA 15"|file.res$GSA=="GSA 16"|file.res$GSA=="GSA 18"|file.res$GSA=="GSA 19"|file.res$GSA=="GSA 20"|file.res$GSA=="GSA 21","Ionian",
+                                                  ifelse(file.res$GSA == "GSA 17","Adriatic",
+                                                         ifelse(file.res$GSA == "GSA 29","Black Sea",
+                                                                ifelse(file.res$GSA =="GSA 22"|file.res$GSA=="GSA 23","Aegean",
+                                                                       ifelse(file.res$GSA == "GSA 24"|file.res$GSA=="GSA 25"|file.res$GSA=="GSA 26"|file.res$GSA=="GSA 27","Levant",file.res$GSA
+                                                                       ))))))))
+  
+  #--- input file of three alpha country code (from CIA) --#
+  melt.fishStat$CountryCode <- CountryCode$STANAG[match(melt.fishStat$Country..Country.,CountryCode$ENTITY)]
+  melt.fishStat$TimeUnit <- "Year" # insert a column of Time.Unit == Year of all data
+  #--- create a univocal code to match with our aggregating file --#
+  melt.fishStat$paste <- apply(melt.fishStat[,c(6,4,7,3,2)],1,paste0,collapse="_")  
+  
+  #--- sum of landings data in file.res by FAOarea ---#
+  
+  fun.aggreg.FAO<- function(a,column){
+    aggLandings <- aggregate(Total.Landings..in.tons.~
+                               Country+Year+Time.Unit+CorrectNameFinal+ FAOarea+GUNnew,
+                             subset(a, GUNnew==column ),
+                             FUN=sum)
+    aggLandings$aggTime <- 'Year' # insert time unit Year, for the aggregation file 
+    aggLandings$paste <- apply(aggLandings[,c(1,2,8,4,5)],1,paste0,collapse="_") # paste unic code with agg time (Year) c("Country","Year","aggTime","CorrectNameFinal" "GSA")
+    aggLandings$paste_flag <- apply(aggLandings[,1:5],1,paste0,collapse="_") # paste unic code
+    aggLandings$pasteNO.year <- apply(aggLandings[,c(1,8,4,5)],1,paste0,collapse="_")
+    return(aggLandings)
+  } #
+  
+  aggFor_FAO_GSA <- fun.aggreg.FAO (file.res,"GSA")
+  aggFor_FAO_Area <- fun.aggreg.FAO (file.res, "Fishing area")
+  
+  nrow(aggFor_FAO_Area)
+  nrow(aggFor_FAO_GSA)
+  
+  #'----------------------------------------- MATCH in Area file and FAO data ----------------------------------'
+  aggFor_FAO_Area$matchFAO <- melt.fishStat$value[match(aggFor_FAO_Area$paste,melt.fishStat$paste)] 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  #'----------------------------------------- MATCH in GSA file and FAO data ----------------------------------'
+  aggFor_FAO_GSA$matchFAO <- melt.fishStat$value[match(aggFor_FAO_GSA$paste,melt.fishStat$paste)] 
+  
+  
+  
+  aggFor_FAO_Area <- cbind(aggFor_FAO_Area,fun.test.cor(aggFor_FAO_Area,"matchFAO"))
+  aggFor_FAO_GSA <- cbind(aggFor_FAO_GSA,fun.test.cor(aggFor_FAO_GSA,"matchFAO"))
+  
+  #'------------- spatial aggregation code FAO------------------------'
+  col_name_flag_FAO <- c("Country","Year","Time.Unit","CorrectNameFinal","FAOarea")
+  file.res$paste_flagFAO <- apply(file.res[,col_name_flag_FAO],1,paste0,collapse="_")
+  
+  file.res$FAOmatch_Area_Validation.Spearman <- aggFor_FAO_Area$matchFAO_Validation.Spearman[match(file.res$paste_flagFAO,aggFor_FAO_Area$paste_flag)] 
+  file.res$FAOmatch_GSA_Validation.Spearman <- aggFor_FAO_GSA$matchFAO_Validation.Spearman[match(file.res$paste_flagFAO,aggFor_FAO_GSA$paste_flag)] 
+  
+  file.res$FAOmatch_Area_Validation.Z.score <- aggFor_FAO_Area$matchFAO_Validation.Z.score[match(file.res$paste_flagFAO,aggFor_FAO_Area$paste_flag)]
+  file.res$FAOmatch_GSA_Validation.Z.score <- aggFor_FAO_GSA$matchFAO_Validation.Z.score[match(file.res$paste_flagFAO,aggFor_FAO_GSA$paste_flag)]
+  
+  colnames(file.res) <- c("file name","dataset ID","record ID","Country","Year","Time Unit",
+                          "Time Unit Value","GSA","Geographical Unit","Geographical Unit Name",       
+                          "Port Name","Gear L3","Gear L4","Gear L5","Fishing Technique",    
+                          "Vessel Length Category","Species (scientific name)","Species FAO-ASFIS code",   
+                          "Total Landings (in tons)","Total Discards (in tons)","Comments","ID",
+                          "dup","ref","Correct Species (scientific name)","TimeSeries","TimeSeriesID",
+                          "TimeSeriesLength","UnivocalCode","z.score","outliers","New Geographical UnitName",
+                          "Spatial aggregation code",                 
+                          "FAOarea","Spatial aggregation codeFAO","Correlation FAO vs Fishing area",
+                          "Correlation FAO vs GSA","Rel_diff_Fishing area vs FAO",
+                          "Rel_diff_GSA vs FAO")
+  
+  
+  return(file.res)
+}
+
+file.res3_BS <- fun.val.BS(file.res2)
+write.csv(file.res3_BS,"file.res3_BS.csv")
+
