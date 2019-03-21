@@ -9,6 +9,15 @@
 #_______________________________________________________________________________________________________________________#
 
 
+#-----------------------------------------------------------------------------------------------------------------------#
+# ---------- IMPORTANT ----- IMPORTANT ----- IMPORTANT ----- IMPORTANT ----- IMPORTANT ----- IMPORTANT -----------------# 
+#
+#   we apply a new validation function (fun.val.BS) to file.res2, which is a result from function(fun.stat).
+#   fun.stat and the previous function fun.check work dynamically on the file Mediterranean or file Black sea
+#   but for validation function we need a devoted function for each file (Mediterranean or Black Sea)                                                                                                                         
+#-----------------------------------------------------------------------------------------------------------------------#
+
+file.csv <- "RECFISH-WP1_BlackSea_DP_11032019.csv"
 
 fun.val.BS <- function (f) {
   file.res <- f   
@@ -16,6 +25,7 @@ fun.val.BS <- function (f) {
   
   #'------- new geographical unit name ------'
   file.res$GUNnew <- ifelse(is.na(file.res$Port.Name)==F,"Fishing area",as.character(file.res$Geographical.Unit))
+  
   #'----- spatial aggregation code -----'
   col_name_flag <- c("Country","Year","Time.Unit","CorrectNameFinal","GSA","GUNnew")
   file.res$paste_flag <- apply(file.res[,col_name_flag],1,paste0,collapse="_")
@@ -67,10 +77,13 @@ fun.val.BS <- function (f) {
   
   #--- match common name Fistat and WORMS and out scientific name ---#
   fishStat$sciName <-  alphaCode$Scientific_name_UPDATED_WORMS[match(fishStat$Species..ASFIS.species.,alphaCode$ENGLISH_NAME)]
+  
   #-- melt years ---#
   melt.fishStat <- data.frame(melt(fishStat[,c(-2,-4)],id=c("Country..Country.","Fishing.area..FAO.division.","sciName")))
+  
   #--- adjust column year ---#
   melt.fishStat$variable <- as.numeric(gsub('X','',melt.fishStat$variable))
+  
   #--- FAO area in file.res ---#
   file.res$FAOarea <- ifelse(file.res$GSA=="GSA 1"|file.res$GSA=="GSA 2"|file.res$GSA=="GSA 3"|file.res$GSA=="GSA 4"|file.res$GSA=="GSA 5"|file.res$GSA=="GSA 6"|file.res$GSA=="GSA 11.1","Balearic",
                              ifelse(file.res$GSA == "GSA 7", "Gulf of Lion",
@@ -85,6 +98,7 @@ fun.val.BS <- function (f) {
   #--- input file of three alpha country code (from CIA) --#
   melt.fishStat$CountryCode <- CountryCode$STANAG[match(melt.fishStat$Country..Country.,CountryCode$ENTITY)]
   melt.fishStat$TimeUnit <- "Year" # insert a column of Time.Unit == Year of all data
+  
   #--- create a univocal code to match with our aggregating file --#
   melt.fishStat$paste <- apply(melt.fishStat[,c(6,4,7,3,2)],1,paste0,collapse="_")  
   
@@ -153,7 +167,7 @@ fun.val.BS <- function (f) {
   return(file.res)
 }
 
-file.res3_BS <- fun.val.BS(file.res2)
+file.res3_BS <- fun.val.BS(file.res2) # apply function to file.res2 (result from function fun.stat)
 # save data in ypur carpet as BS (Black Sea) file
 write.csv(file.res3_BS,"file.res3_BS.csv")
 
