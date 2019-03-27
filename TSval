@@ -52,7 +52,7 @@ library(ggpubr)
 library(mosaic)
 
 # first step: quality check
-
+file.res <- fun.check(file.csv)    
 # second step: internal consistency
 
 # third step: validation
