@@ -58,4 +58,5 @@ file.res <- fun.check(file.csv)
 file.res2 <- fun.stat(file.res) # apply a statistical function to the previous result file.res from first analysis 'Quality check'    
   
 # third step: validation
-
+file.res3 <- fun.val(file.res2)         
+write.csv(file.res3,"file.res3.csv",row.names=F)
