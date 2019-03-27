@@ -216,8 +216,7 @@ fun.val <- function (f) {
   return(file.res)
 }
 
-file.res3 <- fun.val(file.res2)         
-write.csv(file.res3,"file.res3.csv",row.names=F)
+
   
     
     
