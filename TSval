@@ -53,7 +53,9 @@ library(mosaic)
 
 # first step: quality check
 file.res <- fun.check(file.csv)    
-# second step: internal consistency
 
+# second step: internal consistency
+file.res2 <- fun.stat(file.res) # apply a statistical function to the previous result file.res from first analysis 'Quality check'    
+  
 # third step: validation
 
