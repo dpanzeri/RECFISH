@@ -1,7 +1,7 @@
 #-------------------------------------- Validation data-set ------------------------------------------------------------#
 # The validation of data set include two steps:                                                                         #
-#         1. Validation INTRA data set                                                                                  #
-#         2. Validation INTER data set                                                                                  #
+#         1. Validation INTRA dataset                                                                                  #
+#         2. Validation of the datasets with FAO official dataset                                                                                  #
 #-----------------------------------------------------------------------------------------------------------------------#
 
 #_______________________________________________________________________________________________________________________#
