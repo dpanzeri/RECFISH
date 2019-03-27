@@ -74,7 +74,7 @@ fun.check <- function (file.csv) {
   return(file.1)
 } 
 
- file.res <- fun.check(file.csv)         
+      
 
 
   
