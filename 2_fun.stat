@@ -55,10 +55,6 @@ Myfun <- function(c) {
   return(x)
 }
  
-file.res2 <- fun.stat(file.res) # apply a statistical function to the previous result file.res from first analysis 'Quality check'    
-  
-
-
 
 
 
