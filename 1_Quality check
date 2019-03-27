@@ -1,5 +1,5 @@
 #--------------------------------------------------------------------------------------------------------------------------------------#
-# The input file “RECFISH-WP1_Mediterranean.xlsx” (sheet “Landings”)  is necessarily structured as described in the WP1,               #
+# The input file (for example, “RECFISH-WP1_Mediterranean.xlsx”, sheet “Landings”)  is structured as described in the RECFISH WP1,               #
 # thus it should contain in row 1:1 the labels                                                                                         #
 # as in the following script, each one for a column thus columns from ”file.name” to “Comments” (21 columns) are expected by the code  #
                                                                                                                                        # 
